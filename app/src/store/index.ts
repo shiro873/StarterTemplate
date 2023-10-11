@@ -16,25 +16,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { rootReducer } from './reducers';
 
-// persist configs
-const persistConfig = {
-    key: 'rrot',
-    version: 1,
-    storage: AsyncStorage
-};
-
-const persistedReducer = persistReducer(persistConfig, rootReducer);
-
 const store = configureStore({
-    reducer: [],//persistReducer,
+    reducer: {rootReducer},
     devTools: true,
-    // middleware(getDefaultMiddleware) {
-    //     getDefaultMiddleware({
-    //         serializableCheck: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-    //     })
-    //     //.concat(api.middleware)
-    // },
-})
+    middleware: getDefaultMiddleware =>
+    getDefaultMiddleware({immutableCheck: false, serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+    }}),
+});
+
 
 setupListeners(store.dispatch);
 
