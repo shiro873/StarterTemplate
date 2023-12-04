@@ -41,9 +41,9 @@ services:
     networks:
       - database
 
-  redis:
+  cache:
     image: redis:latest
-    container_name: redis
+    container_name: cache
     ports:
       - 6379:6379
     volumes:
@@ -59,14 +59,97 @@ services:
     networks:
       - app-network
 
-  webapp_nest:
-    build: .
+  # webapp_nest:
+  #   build: .
+  #   ports:
+  #     - "3001:3001"
+  #   volumes:
+  #     - ./server:/app/server
+  #   networks:
+  #     - app-network
+  # Redis cache
+
+  # Golang API service
+  api_golang:
+    image: your_golang_image
     ports:
-      - "3001:3001"
+      - 8000:8000
     volumes:
-      - ./server:/app/server
-    networks:
-      - app-network
+      - ./golang_api:/app
+    depends_on:
+      - cache
+    environment:
+      CACHE_HOST: cache
+      CACHE_PORT: 6379
+
+  # Load balancer for Golang API
+  golang_lb:
+    image: traefik:latest
+    ports:
+      - 80:80
+      - 4242:4242
+    volumes:
+      - ./traefik.toml:/etc/traefik/traefik.toml
+    depends_on:
+      - api_golang
+    command:
+      - --traefik.docker=true
+      - --traefik.http.middlewares.cache.cacheControl=max-age=300
+
+  # NodeJS API service
+  api_nodejs:
+    image: your_node_image
+    ports:
+      - 6000:6000
+    volumes:
+      - ./nodejs_api:/app
+    depends_on:
+      - cache
+    environment:
+      CACHE_HOST: cache
+      CACHE_PORT: 6379
+
+  # Load balancer for NodeJS API
+  nodejs_lb:
+    image: traefik:latest
+    ports:
+      - 81:81
+      - 4243:4243
+    volumes:
+      - ./traefik.toml:/etc/traefik/traefik.toml
+    depends_on:
+      - api_nodejs
+    command:
+      - --traefik.docker=true
+      - --traefik.http.middlewares.cache.cacheControl=max-age=300
+
+  # NestJS API service
+  api_nest:
+    image: your_nest_image
+    ports:
+      - 7000:7000
+    volumes:
+      - ./nest_api:/app
+    depends_on:
+      - cache
+    environment:
+      CACHE_HOST: cache
+      CACHE_PORT: 6379
+
+  # Load balancer for NestJS API
+  nest_lb:
+    image: traefik:latest
+    ports:
+      - 82:82
+      - 4244:4244
+    volumes:
+      - ./traefik.toml:/etc/traefik/traefik.toml
+    depends_on:
+      - api_nest
+    command:
+      - --traefik.docker=true
+      - --traefik.http.middlewares.cache.cacheControl=max-age=300
+
   nginx:
     image: nginx:latest
     volumes:
@@ -77,16 +160,19 @@ services:
       - postgres
       - mysql
       - mongodb
-      - redis
+      - cache
       - api_golang
       - api_nodejs
       - api_nest
       - webapp_react
-      - webapp_nest
+      # - webapp_nest
 
 volumes:
   postgres_data:
   mysql_data:
   mongodb_data:
   redis_data:
+  golang_api: {}
+  nodejs_api: {}
+  nest_api: {}
 
