@@ -59,14 +59,14 @@ services:
     networks:
       - app-network
 
-  # webapp_nest:
-  #   build: .
-  #   ports:
-  #     - "3001:3001"
-  #   volumes:
-  #     - ./server:/app/server
-  #   networks:
-  #     - app-network
+  webapp_next:
+    build: ./webapp-next
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./server:/app/server
+    networks:
+      - app-network
   # Redis cache
 
   # Golang API service
@@ -165,7 +165,7 @@ services:
       - api_nodejs
       - api_nest
       - webapp_react
-      # - webapp_nest
+      # - webapp_next
 
 volumes:
   postgres_data:
